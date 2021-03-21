@@ -24,6 +24,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		952BF6A325FDEA5E00A7C5BE /* parser.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = parser.hpp; sourceTree = "<group>"; };
+		95B2277E2603BA1E00DF86C8 /* JsonValue.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = JsonValue.h; sourceTree = "<group>"; };
 		95CA301725FCB6580016DA6A /* JSONParser */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = JSONParser; sourceTree = BUILT_PRODUCTS_DIR; };
 		95CA301A25FCB6580016DA6A /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		95CA302225FCB6810016DA6A /* lexer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = lexer.hpp; sourceTree = "<group>"; };
@@ -64,6 +66,8 @@
 			children = (
 				95CA301A25FCB6580016DA6A /* main.cpp */,
 				95CA302225FCB6810016DA6A /* lexer.hpp */,
+				952BF6A325FDEA5E00A7C5BE /* parser.hpp */,
+				95B2277E2603BA1E00DF86C8 /* JsonValue.h */,
 			);
 			path = JSONParser;
 			sourceTree = "<group>";
@@ -265,6 +269,11 @@
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = NO;
 				GCC_WARN_INITIALIZER_NOT_FULLY_BRACKETED = YES;
 				GCC_WARN_PEDANTIC = YES;
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-Weverything",
+					"-Wno-c++98-compat",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -282,6 +291,11 @@
 				GCC_WARN_ABOUT_MISSING_PROTOTYPES = NO;
 				GCC_WARN_INITIALIZER_NOT_FULLY_BRACKETED = YES;
 				GCC_WARN_PEDANTIC = YES;
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-Weverything",
+					"-Wno-c++98-compat",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

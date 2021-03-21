@@ -23,15 +23,21 @@ constexpr auto falseString = "false";
 constexpr auto nullString = "null";
 constexpr char negativeSign = '-';
 constexpr char dot = '.';
+constexpr char comma = ',';
+constexpr char colon = ':';
+constexpr char leftBrace = '{';
+constexpr char rightBrace = '}';
+constexpr char leftBracket = '[';
+constexpr char rightBracket = ']';
+constexpr auto jSONFormatSpecifiers = {comma, colon, leftBrace, rightBrace, leftBracket, rightBracket};
 
-class StringLexer {
-public:
+struct StringLexer {
     static constexpr std::string_view lex(const std::string_view inputString) {
         if (inputString.length() == 0 || inputString[0] != doubleQuote) {
             return std::string_view();
         }
-        auto stringBegin = inputString.begin() + 1;
-        auto closingIt = std::find(stringBegin, inputString.end(), doubleQuote);
+        const auto stringBegin = inputString.begin() + 1;
+        const auto closingIt = std::find(stringBegin, inputString.end(), doubleQuote);
         if (closingIt != inputString.end()) {
             return std::string_view(
                                     (stringBegin != closingIt) ? &*stringBegin : nullptr,
@@ -43,8 +49,7 @@ public:
     }
 };
 
-class NumberLexer {
-public:
+struct NumberLexer {
     static constexpr std::string_view lex(const std::string_view inputString) noexcept {
         if (inputString.length() == 0 ||
             (inputString[0] != negativeSign && !std::isdigit(inputString[0]))) {
@@ -80,8 +85,7 @@ public:
     }
 };
 
-class BoolLexer {
-public:
+struct BoolLexer {
     static constexpr std::string_view lex(const std::string_view inputString) noexcept {
         if (inputString.rfind(trueString, 0) == 0) {
             return std::string_view(inputString.data(), strlen(trueString));
@@ -94,8 +98,7 @@ public:
 };
 
 
-class NullLexer {
-public:
+struct NullLexer {
     static constexpr std::string_view lex(const std::string_view inputString) noexcept {
         if (inputString.rfind(nullString, 0) == 0) {
             return std::string_view(inputString.data(), strlen(nullString));
@@ -104,13 +107,34 @@ public:
     }
 };
 
+struct JsonFormatLexer {
+    static constexpr std::string_view lex(const std::string_view inputString) noexcept {
+        if (inputString.size() > 0 &&
+            std::find(std::begin(jSONFormatSpecifiers), std::end(jSONFormatSpecifiers), inputString[0]) != std::end(jSONFormatSpecifiers)) {
+            return std::string_view(inputString.data(), 1);
+        }
+        return std::string_view();
+    }
+};
+
 enum class TokenType {
     String,
-    Number,
+    Int,
+    Double,
     Bool,
     Null,
+    JsonFormatSpecifier,
     None
 };
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpadded"
+struct Token {
+    std::string value;
+    TokenType type;
+    Token(const std::string& value, TokenType type): value(value), type(type) {}
+};
+#pragma clang diagnostic pop
 
 class Lexer {
     static constexpr std::pair<std::string_view, TokenType> tryLex(const std::string_view inputString) {
@@ -121,7 +145,8 @@ class Lexer {
         
         auto lexedNumber = NumberLexer::lex(inputString);
         if (lexedNumber.size() > 0) {
-            return std::make_pair(lexedNumber, TokenType::Number);
+            bool isDouble = (lexedNumber.find('.') != std::string_view::npos);
+            return std::make_pair(lexedNumber, isDouble ? TokenType::Double : TokenType::Int);
         }
         
         auto lexedBool = BoolLexer::lex(inputString);
@@ -133,20 +158,37 @@ class Lexer {
         if (lexedNull.size() > 0) {
             return std::make_pair(lexedNull, TokenType::Null);
         }
+        
+        auto lexedFormatSpecifier = JsonFormatLexer::lex(inputString);
+        if (lexedFormatSpecifier.size() > 0) {
+            return std::make_pair(lexedFormatSpecifier, TokenType::JsonFormatSpecifier);
+        }
+        
         return std::make_pair(std::string_view(), TokenType::None);
     }
 public:
-    static std::vector<std::string> lex(const std::string& inputString) {
+    static std::vector<Token> lex(const std::string& inputString) {
         std::string_view inputStringView = inputString;
-        std::vector<std::string> lexOutput;
+        std::vector<Token> lexOutput;
         while (inputStringView.size() > 0) {
+            // Remove whitespaces from begining
+            auto it = inputStringView.begin();
+            while (it != inputStringView.end() && std::isspace(*it)) {
+                ++it;
+            }
+            inputStringView.remove_prefix(it - inputStringView.begin());
+            
+            if (inputStringView.size() == 0) {
+                break;
+            }
+            
             auto [lexedString, tokenType] = tryLex(inputStringView);
             
             if (lexedString.size() == 0) {
                 throw std::invalid_argument("Can't lex the input string");
             }
 
-            lexOutput.emplace_back(lexedString);
+            lexOutput.emplace_back(std::string(lexedString), tokenType);
             if (tokenType != TokenType::String) {
                 inputStringView.remove_prefix(lexedString.size());
             } else {

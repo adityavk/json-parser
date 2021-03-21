@@ -211,13 +211,11 @@ void print(const std::vector<T>& vec) {
     cout<< "\n";
 }
 
-
-
 void lexEverything() {
-    print(Lexer::lex("1.0null4.3true\"wow, lol.g agnonn\"false"));
-    print(Lexer::lex("1.0null4.3truefalse\"wow, lol.g agnonn\""));
-    print(Lexer::lex("\"wow, lol.g agnonn\"1.04.3true\"wow, lol.g agnonn\"falsenull"));
-    print(Lexer::lex("1.0null4.3true\"wow, lol.g agnonn\"falsetrue"));
+//    print(Lexer::lex("1.0null4.3true\"wow, lol.g agnonn\"false"));
+//    print(Lexer::lex("1.0null4.3truefalse\"wow, lol.g agnonn\""));
+//    print(Lexer::lex("\"wow, lol.g agnonn\"1.04.3true\"wow, lol.g agnonn\"falsenull"));
+//    print(Lexer::lex("1.0null4.3true\"wow, lol.g agnonn\"falsetrue"));
 }
 
 void TestClass::runAllTests() {
@@ -260,4 +258,77 @@ void TestClass::runAllTests() {
     lexMinusDot();
     lexTwoDotsTogether();
     lexEverything();
+}
+
+static const char alphanum[] =
+    "0123456789"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz";
+
+std::string LexerTestClass::generate(JSONParser::TokenType tokenType) {
+    switch (tokenType) {
+        case JSONParser::TokenType::String: {
+            constexpr int stringLen = 12;
+            string tmp_s;
+            tmp_s.reserve(stringLen);
+            tmp_s += '\"';
+            for (int i = 0; i < stringLen; ++i)
+                tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+            tmp_s += '\"';
+            return tmp_s;
+        }
+        case JSONParser::TokenType::Int: {
+            uint64_t num = rand();
+            return to_string(num);
+        }
+        case JSONParser::TokenType::Double: {
+            double num = (static_cast<double>(rand()) / RAND_MAX) * ((rand() % 2) ?  -1.0 : 1.0);
+            return to_string(num);
+        }
+        case JSONParser::TokenType::Bool:
+            return (rand() % 2) == 0 ? "true" : "false";
+        case JSONParser::TokenType::Null:
+            return "null";
+        case JSONParser::TokenType::JsonFormatSpecifier: {
+            switch (rand() % 6) {
+                case 0:
+                    return ",";
+                case 1:
+                    return ":";
+                case 2:
+                    return "{";
+                case 3:
+                    return "}";
+                case 4:
+                    return "[";
+                case 5:
+                    return "]";
+            }
+        }
+        case JSONParser::TokenType::None:
+            return "";
+    }
+}
+
+uint64_t LexerTestClass::timeLexer(const int numIter, int numParts) {
+    std::vector<std::string> inputs;
+    inputs.reserve(numIter);
+    srand(static_cast<unsigned>(time(nullptr)));
+    for (int i = 0; i < numIter; ++i) {
+        std::string s;
+        for (int j = 0; j < numParts; ++j) {
+            TokenType type = static_cast<TokenType>((rand() % static_cast<int>(TokenType::None)));
+            s.append(generate(type));
+        }
+        inputs.push_back(s);
+    }
+    uint64_t timeElapsed = 0;
+    for (const auto& input : inputs) {
+        auto startTime = std::chrono::steady_clock::now();
+        auto lexOut = Lexer::lex(input);
+        auto elapsed = std::chrono::steady_clock::now() - startTime;
+        timeElapsed += std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count();
+//        print(lexOut);
+    }
+    return timeElapsed;
 }
